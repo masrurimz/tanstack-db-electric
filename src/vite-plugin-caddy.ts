@@ -4,7 +4,6 @@ import type { Plugin } from "vite"
 interface CaddyPluginOptions {
   host?: string
   httpsPort?: number
-  encoding?: boolean
   autoStart?: boolean
   configPath?: string
 }
@@ -13,7 +12,6 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
   const {
     host = `localhost`,
     httpsPort = 5173,
-    encoding = true,
     autoStart = true,
     configPath = `Caddyfile`,
   } = options
@@ -24,17 +22,12 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
 
   const generateCaddyfile = (vitePort: number) => {
     const config = `localhost:${httpsPort} {
-  reverse_proxy ${host}:${vitePort} {
+  reverse_proxy http://${host}:${vitePort} {
     transport http {
+      versions 1.1
       compression off
     }
-  }${
-    encoding
-      ? `
-  encode {
-    gzip
-  }`
-      : ``
+    flush_interval -1
   }
 }
 `
@@ -58,17 +51,13 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
       caddyProcess = null
     })
 
-    // Handle process cleanup
-    const cleanup = () => {
+    // Handle process cleanup - only clean up Caddy, don't interfere with signal handling
+    process.on(`exit`, () => {
       if (caddyProcess) {
         caddyProcess.kill()
         caddyProcess = null
       }
-    }
-
-    process.on(`SIGINT`, cleanup)
-    process.on(`SIGTERM`, cleanup)
-    process.on(`exit`, cleanup)
+    })
   }
 
   const stopCaddy = () => {
