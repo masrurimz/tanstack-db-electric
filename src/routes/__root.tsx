@@ -6,7 +6,7 @@ import {
   createRootRoute,
 } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
-import { getLocale } from "@/paraglide/runtime.js"
+import { getLocale } from "@/paraglide/runtime"
 
 import appCss from "../styles.css?url"
 
