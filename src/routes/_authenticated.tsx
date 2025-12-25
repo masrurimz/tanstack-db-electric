@@ -4,6 +4,7 @@ import { Outlet } from "@tanstack/react-router"
 import { authClient, authStateCollection } from "@/lib/auth-client"
 import { useLiveQuery } from "@tanstack/react-db"
 import { projectCollection } from "@/lib/collections"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 
 export const Route = createFileRoute(`/_authenticated`)({
   ssr: false, // Disable SSR - run beforeLoad only on client
@@ -119,6 +120,7 @@ function AuthenticatedLayout() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <LocaleSwitcher />
               <span className="text-sm text-gray-700">
                 {session.user.email}
               </span>
