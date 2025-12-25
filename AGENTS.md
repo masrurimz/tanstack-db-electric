@@ -1,10 +1,10 @@
 # TanStack Start + DB + Electric Starter
 
-This is a TanStack Start project with tRPC v10 for mutations and Electric sync for reads, running on Start's server functions so it's easily deployable to many hosting platforms.
+This is a TanStack Start project with oRPC for mutations and Electric sync for reads, running on Start's server functions so it's easily deployable to many hosting platforms.
 
-**Core Pattern**: Electric SQL for reads, tRPC for writes, TanStack DB for optimistic updates.
+**Core Pattern**: Electric SQL for reads, oRPC for writes, TanStack DB for optimistic updates.
 
-All reads from the Postgres database are done via the Electric sync engine. All mutations (create, update, delete) are done via tRPC with full end-to-end type safety.
+All reads from the Postgres database are done via the Electric sync engine. All mutations (create, update, delete) are done via oRPC with full end-to-end type safety.
 
 We sync normalized data from tables into TanStack DB collections in the client & then write client-side queries for displaying data in components.
 
@@ -53,11 +53,12 @@ This command will also report linter errors that were not automatically fixable.
 - **Services**: Docker Compose setup (Postgres on 54321, Electric on 30000)
 - **Styling**: Tailwind CSS v4
 - **Authentication**: better-auth
-- **API**: tRPC v10 for mutations with full e2e type safety, Electric shapes for real-time reads
+- **API**: oRPC for mutations with full e2e type safety, Electric shapes for real-time reads
+- **Validation**: Arktype with drizzle-arktype for schema generation
 
 ### API Routing
 
-- **tRPC** (`/api/trpc/*`) - All mutations (create, update, delete) with full type safety
+- **oRPC** (`/api/rpc/*`) - All mutations (create, update, delete) with full type safety
 - **better-auth** (`/api/auth/*`) - Authentication endpoints
 - **Electric shapes** (`/api/projects`, `/api/todos`, `/api/users`) - Real-time sync endpoints for reads
 
@@ -72,11 +73,14 @@ This command will also report linter errors that were not automatically fixable.
 - **Testing**: Vitest with @testing-library/react for component tests
 - **file names** should always use kebab-case
 
-### tRPC Integration
+### oRPC Integration
 
-- tRPC routers are defined in `src/lib/trpc/` directory
-- Client is configured in `src/lib/trpc-client.ts`
-- Collection hooks use tRPC client for mutations in `src/lib/collections.ts`
+- oRPC routers are defined in `src/lib/orpc/routers/` directory
+- Base procedures in `src/lib/orpc/index.ts` with `publicProcedure` and `protectedProcedure`
+- Context creation in `src/lib/orpc/context.ts`
+- Client is configured in `src/lib/orpc/client.ts`
+- API handler in `src/routes/api/rpc/$.ts`
+- Collection hooks use oRPC client for mutations in `src/lib/collections.ts`
 - Transaction IDs are generated using `pg_current_xact_id()::xid::text` for Electric sync compatibility
 
 ### Data Flow Architecture
@@ -101,11 +105,11 @@ const { data: todos } = useLiveQuery(
 )
 ```
 
-#### Writing Data (TanStack DB → tRPC)
+#### Writing Data (TanStack DB → oRPC)
 
 ```tsx
 // Use collection operations for optimistic updates
-todosCollection.insert({ ... })  // NOT trpc.todos.create.mutate()
+todosCollection.insert({ ... })  // NOT orpc.todos.create()
 // Similar to Immer
 todosCollection.update(id, (draft) => { ... })
 todosCollection.delete(id)
@@ -122,9 +126,9 @@ export const todosCollection = createCollection(
     schema: selectTodosSchema,
     getKey: (item) => item.id,
 
-    // tRPC handlers (CRUD only, return { txid })
+    // oRPC handlers (CRUD only, return { txid })
     onInsert: async ({ transaction }) => {
-      const result = await trpc.todos.create.mutate(...)
+      const result = await orpc.todos.create({ ... })
       return { txid: result.txid }
     },
     onUpdate: async ({ transaction }) => { ... },
@@ -133,14 +137,36 @@ export const todosCollection = createCollection(
 )
 ```
 
+#### oRPC Router Pattern
+
+```tsx
+// src/lib/orpc/routers/todos.ts
+import { type } from "arktype"
+import { ORPCError } from "@orpc/server"
+import { protectedProcedure, generateTxId } from "@/lib/orpc"
+
+export const todosRouter = {
+  create: protectedProcedure
+    .input(createTodoSchema)
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
+        const txid = await generateTxId(tx)
+        const [newItem] = await tx.insert(todosTable).values(input).returning()
+        return { item: newItem, txid }
+      })
+      return result
+    }),
+}
+```
+
 ### Critical Rules
 
-1. **NEVER use tRPC for data reads** - Only Electric SQL + useLiveQuery
-2. **NEVER call tRPC directly from components** - Use collection operations
+1. **NEVER use oRPC for data reads** - Only Electric SQL + useLiveQuery
+2. **NEVER call oRPC directly from components** - Use collection operations
 3. **NEVER use TanStack Query** - This uses TanStack DB (different library)
 4. **ALWAYS preload collections** in route loaders
 5. **ALWAYS use snake_case** for database fields throughout the app
-6. **ONLY basic CRUD in tRPC** - No special mutations unless using `createOptimisticAction`
+6. **ONLY basic CRUD in oRPC** - No special mutations unless using `createOptimisticAction`
 
 ### Naming Conventions
 
@@ -151,10 +177,15 @@ export const todosCollection = createCollection(
 ### Schema Management
 
 ```tsx
-// src/db/zod-schemas.ts (centralized, never redefine)
-export const selectTodoSchema = createSelectSchema(todos)
-export const insertTodoSchema = createInsertSchema(todos)
-export const updateTodoSchema = createUpdateSchema(todos)
+// src/db/schema.ts (centralized, never redefine)
+import { createSelectSchema, createInsertSchema, createUpdateSchema } from "drizzle-arktype"
+
+export const selectTodoSchema = createSelectSchema(todosTable)
+export const createTodoSchema = createInsertSchema(todosTable).omit(`created_at`)
+export const updateTodoSchema = createUpdateSchema(todosTable)
+
+// Type inference uses typeof Schema.infer
+export type Todo = typeof selectTodoSchema.infer
 ```
 
 ### Component Patterns

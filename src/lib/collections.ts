@@ -5,7 +5,7 @@ import {
   selectProjectSchema,
   selectUsersSchema,
 } from "@/db/schema"
-import { trpc } from "@/lib/trpc-client"
+import { orpc } from "@/lib/orpc/client"
 
 export const usersCollection = createCollection(
   electricCollectionOptions({
@@ -47,7 +47,7 @@ export const projectCollection = createCollection(
     getKey: (item) => item.id,
     onInsert: async ({ transaction }) => {
       const { modified: newProject } = transaction.mutations[0]
-      const result = await trpc.projects.create.mutate({
+      const result = await orpc.projects.create({
         name: newProject.name,
         description: newProject.description,
         owner_id: newProject.owner_id,
@@ -58,7 +58,7 @@ export const projectCollection = createCollection(
     },
     onUpdate: async ({ transaction }) => {
       const { modified: updatedProject } = transaction.mutations[0]
-      const result = await trpc.projects.update.mutate({
+      const result = await orpc.projects.update({
         id: updatedProject.id,
         data: {
           name: updatedProject.name,
@@ -71,7 +71,7 @@ export const projectCollection = createCollection(
     },
     onDelete: async ({ transaction }) => {
       const { original: deletedProject } = transaction.mutations[0]
-      const result = await trpc.projects.delete.mutate({
+      const result = await orpc.projects.delete({
         id: deletedProject.id,
       })
 
@@ -91,7 +91,6 @@ export const todoCollection = createCollection(
           : `http://localhost:5173`
       ).toString(),
       parser: {
-        // Parse timestamp columns into JavaScript Date objects
         timestamptz: (date: string) => {
           return new Date(date)
         },
@@ -101,7 +100,7 @@ export const todoCollection = createCollection(
     getKey: (item) => item.id,
     onInsert: async ({ transaction }) => {
       const { modified: newTodo } = transaction.mutations[0]
-      const result = await trpc.todos.create.mutate({
+      const result = await orpc.todos.create({
         user_id: newTodo.user_id,
         text: newTodo.text,
         completed: newTodo.completed,
@@ -113,7 +112,7 @@ export const todoCollection = createCollection(
     },
     onUpdate: async ({ transaction }) => {
       const { modified: updatedTodo } = transaction.mutations[0]
-      const result = await trpc.todos.update.mutate({
+      const result = await orpc.todos.update({
         id: updatedTodo.id,
         data: {
           text: updatedTodo.text,
@@ -125,7 +124,7 @@ export const todoCollection = createCollection(
     },
     onDelete: async ({ transaction }) => {
       const { original: deletedTodo } = transaction.mutations[0]
-      const result = await trpc.todos.delete.mutate({
+      const result = await orpc.todos.delete({
         id: deletedTodo.id,
       })
 

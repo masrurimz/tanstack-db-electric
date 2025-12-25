@@ -30,9 +30,6 @@ const config = defineConfig({
   optimizeDeps: {
     exclude: [`@tanstack/start-server-core`],
   },
-  ssr: {
-    noExternal: [`zod`],
-  },
 })
 
 export default config

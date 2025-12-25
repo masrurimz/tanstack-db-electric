@@ -1,14 +1,14 @@
-import { router, authedProcedure, generateTxId } from "@/lib/trpc"
-import { z } from "zod"
-import { TRPCError } from "@trpc/server"
+import { type } from "arktype"
+import { ORPCError } from "@orpc/server"
 import { eq, and, arrayContains } from "drizzle-orm"
+import { protectedProcedure, generateTxId } from "@/lib/orpc"
 import { todosTable, createTodoSchema, updateTodoSchema } from "@/db/schema"
 
-export const todosRouter = router({
-  create: authedProcedure
+export const todosRouter = {
+  create: protectedProcedure
     .input(createTodoSchema)
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (tx) => {
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [newItem] = await tx.insert(todosTable).values(input).returning()
         return { item: newItem, txid }
@@ -17,15 +17,15 @@ export const todosRouter = router({
       return result
     }),
 
-  update: authedProcedure
+  update: protectedProcedure
     .input(
-      z.object({
-        id: z.number(),
+      type({
+        id: `number`,
         data: updateTodoSchema,
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (tx) => {
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [updatedItem] = await tx
           .update(todosTable)
@@ -33,14 +33,13 @@ export const todosRouter = router({
           .where(
             and(
               eq(todosTable.id, input.id),
-              arrayContains(todosTable.user_ids, [ctx.session.user.id])
+              arrayContains(todosTable.user_ids, [context.session.user.id])
             )
           )
           .returning()
 
         if (!updatedItem) {
-          throw new TRPCError({
-            code: `NOT_FOUND`,
+          throw new ORPCError(`NOT_FOUND`, {
             message: `Todo not found or you do not have permission to update it`,
           })
         }
@@ -51,24 +50,23 @@ export const todosRouter = router({
       return result
     }),
 
-  delete: authedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (tx) => {
+  delete: protectedProcedure
+    .input(type({ id: `number` }))
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [deletedItem] = await tx
           .delete(todosTable)
           .where(
             and(
               eq(todosTable.id, input.id),
-              arrayContains(todosTable.user_ids, [ctx.session.user.id])
+              arrayContains(todosTable.user_ids, [context.session.user.id])
             )
           )
           .returning()
 
         if (!deletedItem) {
-          throw new TRPCError({
-            code: `NOT_FOUND`,
+          throw new ORPCError(`NOT_FOUND`, {
             message: `Todo not found or you do not have permission to delete it`,
           })
         }
@@ -78,4 +76,4 @@ export const todosRouter = router({
 
       return result
     }),
-})
+}

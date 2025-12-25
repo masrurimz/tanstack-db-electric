@@ -1,25 +1,24 @@
-import { router, authedProcedure, generateTxId } from "@/lib/trpc"
-import { z } from "zod"
-import { TRPCError } from "@trpc/server"
+import { type } from "arktype"
+import { ORPCError } from "@orpc/server"
 import { eq, and } from "drizzle-orm"
+import { protectedProcedure, generateTxId } from "@/lib/orpc"
 import {
   projectsTable,
   createProjectSchema,
   updateProjectSchema,
 } from "@/db/schema"
 
-export const projectsRouter = router({
-  create: authedProcedure
+export const projectsRouter = {
+  create: protectedProcedure
     .input(createProjectSchema)
-    .mutation(async ({ ctx, input }) => {
-      if (input.owner_id !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: `FORBIDDEN`,
+    .handler(async ({ context, input }) => {
+      if (input.owner_id !== context.session.user.id) {
+        throw new ORPCError(`FORBIDDEN`, {
           message: `You can only create projects you own`,
         })
       }
 
-      const result = await ctx.db.transaction(async (tx) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [newItem] = await tx
           .insert(projectsTable)
@@ -31,15 +30,15 @@ export const projectsRouter = router({
       return result
     }),
 
-  update: authedProcedure
+  update: protectedProcedure
     .input(
-      z.object({
-        id: z.number(),
+      type({
+        id: `number`,
         data: updateProjectSchema,
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (tx) => {
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [updatedItem] = await tx
           .update(projectsTable)
@@ -47,14 +46,13 @@ export const projectsRouter = router({
           .where(
             and(
               eq(projectsTable.id, input.id),
-              eq(projectsTable.owner_id, ctx.session.user.id)
+              eq(projectsTable.owner_id, context.session.user.id)
             )
           )
           .returning()
 
         if (!updatedItem) {
-          throw new TRPCError({
-            code: `NOT_FOUND`,
+          throw new ORPCError(`NOT_FOUND`, {
             message: `Project not found or you do not have permission to update it`,
           })
         }
@@ -65,24 +63,23 @@ export const projectsRouter = router({
       return result
     }),
 
-  delete: authedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.transaction(async (tx) => {
+  delete: protectedProcedure
+    .input(type({ id: `number` }))
+    .handler(async ({ context, input }) => {
+      const result = await context.db.transaction(async (tx) => {
         const txid = await generateTxId(tx)
         const [deletedItem] = await tx
           .delete(projectsTable)
           .where(
             and(
               eq(projectsTable.id, input.id),
-              eq(projectsTable.owner_id, ctx.session.user.id)
+              eq(projectsTable.owner_id, context.session.user.id)
             )
           )
           .returning()
 
         if (!deletedItem) {
-          throw new TRPCError({
-            code: `NOT_FOUND`,
+          throw new ORPCError(`NOT_FOUND`, {
             message: `Project not found or you do not have permission to delete it`,
           })
         }
@@ -92,4 +89,4 @@ export const projectsRouter = router({
 
       return result
     }),
-})
+}
