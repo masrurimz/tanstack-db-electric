@@ -1,9 +1,7 @@
 import { createRouter as createTanstackRouter } from "@tanstack/react-router"
 
-// Import the generated route tree
 import { routeTree } from "./routeTree.gen"
-import { deLocalizeUrl, localizeUrl } from "@/paraglide/runtime.js"
-
+import { deLocalizeHref } from "@/paraglide/runtime.js"
 import "./styles.css"
 
 // Create a new router instance
@@ -14,8 +12,10 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
     rewrite: {
-      input: ({ url }) => deLocalizeUrl(url),
-      output: ({ url }) => localizeUrl(url),
+      // Map localized URLs (e.g., /en/...) to base paths so the route tree matches
+      input: ({ url }) => deLocalizeHref(url.toString()),
+      // Do not re-localize on navigation; localization is handled by middleware/URLs
+      output: ({ url }) => url,
     },
   })
 }

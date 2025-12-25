@@ -8,6 +8,7 @@ import {
   usersCollection,
 } from "@/lib/collections"
 import { type Todo } from "@/db/schema"
+import * as m from "@/paraglide/messages"
 
 export const Route = createFileRoute(`/_authenticated/project/$projectId`)({
   component: ProjectPage,
@@ -92,7 +93,7 @@ function ProjectPage() {
   }
 
   if (!project) {
-    return <div className="p-6">Project not found</div>
+    return <div className="p-6">{m.project_not_found()}</div>
   }
 
   return (
@@ -101,7 +102,7 @@ function ProjectPage() {
         <h1
           className="text-2xl font-bold text-gray-800 mb-2 cursor-pointer hover:bg-gray-50 p-0 rounded"
           onClick={() => {
-            const newName = prompt(`Edit project name:`, project.name)
+            const newName = prompt(m.edit_project_name(), project.name)
             if (newName && newName !== project.name) {
               projectCollection.update(project.id, (draft) => {
                 draft.name = newName
@@ -113,10 +114,10 @@ function ProjectPage() {
         </h1>
 
         <p
-          className="text-gray-600 mb-3 cursor-pointer hover:bg-gray-50 p-0 rounded min-h-[1.5rem]"
+          className="text-gray-600 mb-3 cursor-pointer hover:bg-gray-50 p-0 rounded min-h-6"
           onClick={() => {
             const newDescription = prompt(
-              `Edit project description:`,
+              m.edit_project_description(),
               project.description || ``
             )
             if (newDescription !== null) {
@@ -126,7 +127,7 @@ function ProjectPage() {
             }
           }}
         >
-          {project.description || `Click to add description...`}
+          {project.description || m.click_to_add_description()}
         </p>
 
         <div className="flex gap-2 mb-4">
@@ -135,14 +136,14 @@ function ProjectPage() {
             value={newTodoText}
             onChange={(e) => setNewTodoText(e.target.value)}
             onKeyDown={(e) => e.key === `Enter` && addTodo()}
-            placeholder="Add a new todo..."
+            placeholder={m.add_todo_placeholder()}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={addTodo}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Add
+            {m.add()}
           </button>
         </div>
 
@@ -171,7 +172,7 @@ function ProjectPage() {
                 onClick={() => deleteTodo(todo.id)}
                 className="px-2 py-1 text-red-600 hover:bg-red-50 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                Delete
+                {m.delete()}
               </button>
             </li>
           ))}
@@ -179,7 +180,7 @@ function ProjectPage() {
 
         {(!todos || todos.length === 0) && (
           <div className="text-center py-8">
-            <p className="text-gray-500">No todos yet. Add one above!</p>
+            <p className="text-gray-500">{m.no_todos_hint()}</p>
           </div>
         )}
 
@@ -187,7 +188,7 @@ function ProjectPage() {
 
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-3">
-            Project Members
+            {m.project_members()}
           </h3>
           <div className="space-y-2">
             {(session?.user.id === project.owner_id
@@ -227,7 +228,7 @@ function ProjectPage() {
                   <span className="flex-1 text-gray-800">{user.name}</span>
                   {isOwner && (
                     <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                      Owner
+                      {m.owner()}
                     </span>
                   )}
                 </div>

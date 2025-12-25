@@ -35,10 +35,10 @@ const config = defineConfig({
           ],
         },
         {
-          pattern: `/project/:id`,
+          pattern: `/project/:projectId`,
           localized: [
-            [`en`, `/en/project/:id`],
-            [`de`, `/de/projekt/:id`],
+            [`en`, `/en/project/:projectId`],
+            [`de`, `/de/projekt/:projectId`],
           ],
         },
         {

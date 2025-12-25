@@ -5,6 +5,7 @@ import { authClient, authStateCollection } from "@/lib/auth-client"
 import { useLiveQuery } from "@tanstack/react-db"
 import { projectCollection } from "@/lib/collections"
 import { LocaleSwitcher } from "@/components/locale-switcher"
+import * as m from "@/paraglide/messages"
 
 export const Route = createFileRoute(`/_authenticated`)({
   ssr: false, // Disable SSR - run beforeLoad only on client
@@ -35,15 +36,17 @@ export const Route = createFileRoute(`/_authenticated`)({
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+            <h1 className="text-2xl font-bold text-red-600 mb-4">
+              {m.error()}
+            </h1>
             <p className="text-gray-600 mb-4">
-              {error?.message || `An unexpected error occurred`}
+              {error?.message || m.unexpected_error()}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              Retry
+              {m.retry()}
             </button>
           </div>
         </div>
@@ -71,8 +74,8 @@ function AuthenticatedLayout() {
       if (!hasProject) {
         projectCollection.insert({
           id: Math.floor(Math.random() * 100000),
-          name: `Default`,
-          description: `Default project`,
+          name: m.default_project(),
+          description: m.default_project_description(),
           owner_id: session.user.id,
           shared_user_ids: [],
           created_at: new Date(),
@@ -116,7 +119,7 @@ function AuthenticatedLayout() {
           <div className="flex justify-between items-center h-16">
             <div className="shrink-0">
               <h1 className="text-xl font-semibold text-gray-900">
-                TanStack DB / Electric Starter
+                {m.app_title()}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -128,7 +131,7 @@ function AuthenticatedLayout() {
                 onClick={handleLogout}
                 className="text-sm font-medium text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
               >
-                Sign out
+                {m.sign_out()}
               </button>
             </div>
           </div>
@@ -138,7 +141,9 @@ function AuthenticatedLayout() {
         <aside className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Projects</h2>
+              <h2 className="text-lg font-medium text-gray-900">
+                {m.projects_page()}
+              </h2>
               <button
                 onClick={() => setShowNewProjectForm(!showNewProjectForm)}
                 className="p-1 text-gray-500 hover:text-gray-700"
@@ -166,7 +171,7 @@ function AuthenticatedLayout() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   onKeyDown={(e) => e.key === `Enter` && handleCreateProject()}
-                  placeholder="Project name"
+                  placeholder={m.project_name_placeholder()}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                 />
                 <div className="flex gap-2 mt-2">
@@ -174,13 +179,13 @@ function AuthenticatedLayout() {
                     onClick={handleCreateProject}
                     className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
                   >
-                    Create
+                    {m.create()}
                   </button>
                   <button
                     onClick={() => setShowNewProjectForm(false)}
                     className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
                   >
-                    Cancel
+                    {m.cancel()}
                   </button>
                 </div>
               </div>
