@@ -1,0 +1,17 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "app_title": "TanStack Start + Electric Starter",
+  "home_page": "Home",
+  "projects_page": "Projects",
+  "todos_page": "Todos",
+  "welcome_message": "Welcome, {username}!",
+  "sign_in": "Sign In",
+  "sign_out": "Sign Out",
+  "create_project": "Create Project",
+  "create_todo": "Create Todo",
+  "no_projects": "No projects yet",
+  "no_todos": "No todos yet",
+  "loading": "Loading...",
+  "error_occurred": "An error occurred",
+  "language": "Language"
+}
