@@ -24,7 +24,11 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
 
   const generateCaddyfile = (vitePort: number) => {
     const config = `localhost:${httpsPort} {
-  reverse_proxy ${host}:${vitePort}${
+  reverse_proxy ${host}:${vitePort} {
+    transport http {
+      compression off
+    }
+  }${
     encoding
       ? `
   encode {
