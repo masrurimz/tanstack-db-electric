@@ -1,6 +1,7 @@
 import { ORPCError, os } from "@orpc/server"
 import { sql } from "drizzle-orm"
 import type { Context } from "./context"
+import type { db } from "@/db/connection"
 
 export const o = os.$context<Context>()
 
@@ -21,7 +22,7 @@ const requireAuth = o.middleware(async ({ context, next }) => {
 export const protectedProcedure = publicProcedure.use(requireAuth)
 
 export async function generateTxId(
-  tx: Parameters<Parameters<typeof import(`@/db/connection`).db.transaction>[0]>[0]
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0]
 ): Promise<number> {
   const result = await tx.execute(
     sql`SELECT pg_current_xact_id()::xid::text as txid`

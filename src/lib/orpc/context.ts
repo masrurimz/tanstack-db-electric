@@ -1,8 +1,8 @@
-import { serverOnly } from "@tanstack/react-start"
+import { createServerOnlyFn } from "@tanstack/react-start"
 import { auth } from "@/lib/auth"
 import { db } from "@/db/connection"
 
-export const createContext = serverOnly(
+export const createContext = createServerOnlyFn(
   async ({ request }: { request: Request }) => {
     const session = await auth.api.getSession({
       headers: request.headers,
