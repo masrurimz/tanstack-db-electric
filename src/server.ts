@@ -1,8 +1,9 @@
 // src/server.ts
+import { paraglideMiddleware } from "@/paraglide/server"
 import handler from "@tanstack/react-start/server-entry"
 
 export default {
-  fetch(request: Request) {
-    return handler.fetch(request)
+  fetch(req: Request): Promise<Response> {
+    return paraglideMiddleware(req, ({ request }) => handler.fetch(request))
   },
 }
