@@ -1,4 +1,3 @@
-import { spawn, spawnSync, type ChildProcess } from "child_process"
 import { writeFileSync } from "fs"
 import type { Plugin } from "vite"
 
@@ -19,7 +18,7 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
     configPath = `Caddyfile`,
   } = options
 
-  let caddyProcess: ChildProcess | null = null
+  let caddyProcess: ReturnType<typeof Bun.spawn> | null = null
   let vitePort: number | undefined
   let caddyStarted = false
 
@@ -43,16 +42,12 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
       return
     }
 
-    caddyProcess = spawn(`caddy`, [`run`, `--config`, configPath], {
-      // stdio: "inherit",
-      // shell: true,
+    caddyProcess = Bun.spawn([`caddy`, `run`, `--config`, configPath], {
+      stdout: `inherit`,
+      stderr: `inherit`,
     })
 
-    caddyProcess.on(`error`, (error) => {
-      console.error(`Failed to start Caddy:`, error.message)
-    })
-
-    caddyProcess.on(`exit`, (code) => {
+    caddyProcess.exited.then((code) => {
       if (code !== 0 && code !== null) {
         console.error(`Caddy exited with code ${code}`)
       }
@@ -61,17 +56,9 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
 
     // Handle process cleanup
     const cleanup = () => {
-      if (caddyProcess && !caddyProcess.killed) {
-        caddyProcess.kill(`SIGTERM`)
-        // Force kill if it doesn't terminate gracefully
-        setTimeout(() => {
-          if (caddyProcess && !caddyProcess.killed) {
-            caddyProcess.kill(`SIGKILL`)
-            process.exit()
-          } else {
-            process.exit()
-          }
-        }, 1000)
+      if (caddyProcess) {
+        caddyProcess.kill()
+        caddyProcess = null
       }
     }
 
@@ -81,14 +68,8 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
   }
 
   const stopCaddy = () => {
-    if (caddyProcess && !caddyProcess.killed) {
-      caddyProcess.kill(`SIGTERM`)
-      // Force kill if it doesn't terminate gracefully
-      setTimeout(() => {
-        if (caddyProcess && !caddyProcess.killed) {
-          caddyProcess.kill(`SIGKILL`)
-        }
-      }, 3000)
+    if (caddyProcess) {
+      caddyProcess.kill()
       caddyProcess = null
     }
   }
@@ -97,23 +78,18 @@ export function caddyPlugin(options: CaddyPluginOptions = {}): Plugin {
     if (autoStart && vitePort && !caddyStarted) {
       caddyStarted = true
 
-      // Check if `caddy` binary is available before starting (sync)
-      try {
-        const check = spawnSync(`caddy`, [`--version`], { stdio: `ignore` })
-        if (check.error || check.status !== 0) {
-          throw new Error(
-            `\`caddy\` binary not found or is not working. Please ensure Caddy is installed and available in your PATH.`
-          )
-        }
-      } catch (_err) {
+      // Check if `caddy` binary is available
+      const check = Bun.spawnSync([`caddy`, `--version`])
+      if (check.exitCode !== 0) {
         console.error(
           `\`caddy\` binary not found or is not working. Please ensure Caddy is installed and available in your PATH.`,
           `\nCaddy is required to be able to serve local development with HTTP2 support.`,
           `\n  - Install Caddy: https://caddyserver.com/docs/install`,
-          `\n  - If you have \`asdf\`, run \`asdf install\``
+          `\n  - If you have \`mise\`, run \`mise install\``
         )
         process.exit(1)
       }
+
       // Generate Caddyfile
       const caddyConfig = generateCaddyfile(vitePort)
       writeFileSync(configPath, caddyConfig)
