@@ -2,6 +2,7 @@ import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { authClient } from "@/lib/auth-client"
 import { useState } from "react"
+import * as m from "@/paraglide/messages"
 
 export const Route = createFileRoute(`/login`)({
   component: Layout,
@@ -53,11 +54,11 @@ function Layout() {
 
       if (error) {
         console.error(`Authentication error:`, error)
-        setError(error.message || `Authentication failed`)
+        setError(error.message || m.authentication_failed())
       }
     } catch (err) {
       console.error(`Unexpected error:`, err)
-      setError(`An unexpected error occurred`)
+      setError(m.unexpected_error())
     } finally {
       setIsLoading(false)
     }
@@ -68,21 +69,17 @@ function Layout() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            {m.sign_in_to_account()}
           </h2>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-700">
-              <strong>Development Mode:</strong> Any email/password combination
-              will work for testing. Also new accounts will be automatically
-              created when you try signing in with a new combo.
-            </p>
+            <p className="text-sm text-blue-700">{m.dev_mode_notice()}</p>
           </div>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
-                Email address
+                {m.email_address()}
               </label>
               <input
                 id="email"
@@ -93,12 +90,12 @@ function Layout() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder={m.email_address()}
               />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                Password
+                {m.password()}
               </label>
               <input
                 id="password"
@@ -109,7 +106,7 @@ function Layout() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                placeholder={m.password()}
               />
             </div>
           </div>
@@ -126,7 +123,7 @@ function Layout() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? `Signing in...` : `Sign in`}
+              {isLoading ? m.signing_in() : m.sign_in()}
             </button>
           </div>
         </form>

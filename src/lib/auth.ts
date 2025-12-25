@@ -37,7 +37,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     `https://tanstack-start-db-electric-starter.localhost`,
     `https://${networkIP}`,
-    `http://localhost:5173`, // fallback for direct Vite access
+    `https://localhost:5173`, // fallback for direct Vite access
   ],
   plugins: [tanstackStartCookies()],
 })

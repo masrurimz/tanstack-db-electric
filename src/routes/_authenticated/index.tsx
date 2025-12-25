@@ -3,6 +3,7 @@ import { useLiveQuery } from "@tanstack/react-db"
 import { useEffect } from "react"
 import { projectCollection, todoCollection } from "@/lib/collections"
 import { authClient } from "@/lib/auth-client"
+import * as m from "@/paraglide/messages"
 
 export const Route = createFileRoute(`/_authenticated/`)({
   component: IndexRedirect,
@@ -46,7 +47,7 @@ function IndexRedirect() {
   return (
     <div className="p-6">
       <div className="text-center">
-        <p className="text-gray-500">Loading projects...</p>
+        <p className="text-gray-500">{m.loading_projects()}</p>
       </div>
     </div>
   )
