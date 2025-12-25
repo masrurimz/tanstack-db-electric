@@ -7,21 +7,21 @@
     "node": ">=20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "bunx --bun vite dev",
     "backend:up": "docker compose up -d",
     "backend:down": "docker compose down",
     "backend:clear": "docker compose down -v",
     "start": "bun .output/server/index.mjs",
-    "build": "vite build",
-    "migrate": "drizzle-kit migrate",
-    "migrate:generate": "drizzle-kit generate",
+    "build": "bunx --bun vite build",
+    "migrate": "bunx drizzle-kit migrate",
+    "migrate:generate": "bunx drizzle-kit generate",
     "psql": "dotenvx run -- sh -c 'psql \"$DATABASE_URL\"'",
-    "serve": "vite preview",
-    "test": "echo 'No tests yet'",
-    "lint:check": "eslint .",
-    "lint": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "serve": "bunx --bun vite preview",
+    "test": "bunx vitest run",
+    "lint:check": "bunx eslint .",
+    "lint": "bunx eslint . --fix",
+    "format": "bunx prettier --write .",
+    "format:check": "bunx prettier --check ."
   },
   "dependencies": {
     "@electric-sql/client": "^1.2.0",
